@@ -7,6 +7,27 @@ import webapp2
 
 class DoH(webapp2.RequestHandler):
     def get(self):
+        if self.request.get('dns'):
+            target_url = 'https://dns.google' + self.request.path_qs
+            target_headers = self.request.headers
+            try:
+                result = urlfetch.fetch(
+                    url = target_url,
+                    headers = target_headers,
+                    deadline = 5,
+                    validate_certificate = None
+                    )
+                if result.status_code == 200:
+                    # self.response.headers['Content-Type'] = 'application/dns-message'
+                    self.response.headers['Content-Type'] = result.headers['Content-Type']
+                    self.response.write(result.content)
+                else:
+                    self.response.status_int = result.status_code
+            except urlfetch.Error:
+                logging.exception('ERROR: caught exception fetching url')
+        else:
+            self.response.write('ERROR: name cannot be empty!')
+    def post(self):
         # self.response.headers['Content-Type'] = 'application/dns-message'
         self.response.write('coming soon!')
 
@@ -35,7 +56,7 @@ class Resolve(webapp2.RequestHandler):
                 else:
                     self.response.status_int = result.status_code
             except urlfetch.Error:
-                logging.exception('ERROR: Caught exception fetching url')
+                logging.exception('ERROR: caught exception fetching url')
         else:
             self.response.write('ERROR: name cannot be empty!')
 
